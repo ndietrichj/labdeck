@@ -1,5 +1,29 @@
 export type Status = 'healthy' | 'warning' | 'critical' | 'unknown';
 
+export type ServiceCategory =
+  | 'web'
+  | 'ai-runtime'
+  | 'automation'
+  | 'monitoring'
+  | 'network'
+  | 'media'
+  | 'jobs';
+
+export interface Service {
+  id: string;
+  name: string;
+  status: Status;
+  host: string;
+  category: ServiceCategory;
+  uptime: string;
+  latencyMs: number;
+  lastHeartbeat: string;
+  activeModel?: string;
+  queueDepth?: number;
+  lastRun?: string;
+  description: string;
+}
+
 export interface Host {
   id: string;
   name: string;
@@ -10,17 +34,6 @@ export interface Host {
   memory: number;
   storage: number;
   gpu?: number;
-  trend: 'up' | 'down' | 'stable';
-}
-
-export interface Service {
-  id: string;
-  name: string;
-  status: Status;
-  host: string;
-  uptime: string;
-  latencyMs: number;
-  tags: string[];
 }
 
 export interface Incident {
@@ -30,21 +43,30 @@ export interface Incident {
   time: string;
 }
 
-export interface AiInfra {
-  availableHosts: string[];
-  activeModel: string;
-  vramUsedGb: number;
-  vramTotalGb: number;
-  queueDepth: number;
-  inferenceAvailable: boolean;
+export interface AutomationJob {
+  id: string;
+  name: string;
+  status: Status;
+  lastRun: string;
+  nextRun: string;
+  duration: string;
+  targetHost: string;
+  lastResult: string;
+  logPreview: string[];
+}
+
+export interface AIProvider {
+  id: string;
+  name: string;
+  models: string[];
 }
 
 export interface DashboardData {
   overallStatus: Status;
-  activeAlerts: number;
-  hosts: Host[];
-  services: Service[];
-  incidents: Incident[];
-  ai: AiInfra;
   updatedAt: string;
+  services: Service[];
+  hosts: Host[];
+  incidents: Incident[];
+  automations: AutomationJob[];
+  aiProviders: AIProvider[];
 }
