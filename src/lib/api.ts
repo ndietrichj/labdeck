@@ -2,7 +2,7 @@ import { mockDashboardData } from '../data/mockDashboardData';
 import type { DashboardData } from '../types/dashboard';
 
 const MOCK_MODE = true;
-const BACKEND_BASE_URL = 'http://10.0.0.220:8787/api';
+const BACKEND_BASE_URL = 'http://localhost:8787/api';
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
