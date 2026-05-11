@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.vite/
+target/
+src-tauri/target/
+*.pdb
+*.dll
+*.exe
+*.lib
+*.exp
+*.ilk
+*.tsbuildinfo

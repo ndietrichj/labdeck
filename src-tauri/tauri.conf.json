@@ -10,6 +10,20 @@
     "frontendDist": "../dist"
   },
   "app": {
-    "windows": [{ "title": "LabDeck", "width": 1440, "height": 900, "resizable": true }]
+    "windows": [
+      {
+        "title": "LabDeck",
+        "width": 1440,
+        "height": 900,
+        "resizable": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all"
   }
 }
