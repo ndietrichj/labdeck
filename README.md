@@ -2,6 +2,8 @@
 
 Premium desktop homelab operations dashboard built with Tauri + React + TypeScript.
 
+> **v0.1 note:** This release uses mock telemetry data and ships with a HUD-inspired cyberpunk operations interface.
+
 ## Architecture Overview
 
 - `src/pages`: page-level orchestration (`DashboardPage`)

@@ -1,77 +1,125 @@
-import { MetricCard } from '../components/MetricCard';
-import { SectionHeader } from '../components/SectionHeader';
 import { StatusBadge } from '../components/StatusBadge';
 import { useDashboardData } from '../hooks/useDashboardData';
+
+const navItems = ['HUD', 'Services', 'AI', 'Incidents', 'Config'];
+
+function Meter({ label, value }: { label: string; value?: number }) {
+  const safeValue = value ?? 0;
+  return (
+    <div className="hud-meter">
+      <div className="hud-meter-head"><span>{label}</span><span>{value === undefined ? 'n/a' : `${safeValue}%`}</span></div>
+      <div className="hud-meter-track"><i style={{ width: `${Math.min(safeValue, 100)}%` }} /></div>
+    </div>
+  );
+}
 
 export function DashboardPage() {
   const { data, loading, refresh } = useDashboardData();
 
-  if (loading && !data) {
-    return <div className="panel">Loading operations telemetry…</div>;
-  }
-
-  if (!data) {
-    return <div className="panel">No dashboard data available.</div>;
-  }
+  if (loading && !data) return <div className="loading-screen">Loading telemetry link…</div>;
+  if (!data) return <div className="loading-screen">No dashboard data available.</div>;
 
   const onlineHosts = data.hosts.filter((host) => host.status !== 'critical').length;
+  const totalVramPct = Math.round((data.ai.vramUsedGb / data.ai.vramTotalGb) * 100);
 
   return (
-    <div className="dashboard-grid">
-      <section className="panel overview">
-        <SectionHeader
-          title="Overview"
-          subtitle={`Last updated ${new Date(data.updatedAt).toLocaleTimeString()}`}
-          action={<button className="refresh-btn" onClick={refresh}>Refresh</button>}
-        />
-        <div className="overview-banner">
-          <span>Global System State</span>
-          <StatusBadge status={data.overallStatus} />
+    <div className="hud-shell">
+      <aside className="hud-sidebar hud-panel">
+        <div>
+          <p className="eyebrow">LabDeck Node</p>
+          <h1>LABDECK // HUD</h1>
+          <p className="muted">ENV: HOMELAB-PRIME · SECOPS VIEW</p>
         </div>
-        <div className="metrics-grid">
-          <MetricCard label="Active Alerts" value={data.activeAlerts} subtext="Investigate warning/critical" />
-          <MetricCard label="Hosts Online" value={`${onlineHosts}/${data.hosts.length}`} subtext="Node availability" />
-          <MetricCard label="Services" value={data.services.length} subtext="Monitored workloads" />
-          <MetricCard label="AI Queue" value={data.ai.queueDepth} subtext="Pending inference tasks" />
-        </div>
-      </section>
-
-      <section className="panel">
-        <SectionHeader title="Host Grid" subtitle="Compute and infrastructure nodes" />
-        <div className="host-grid">
-          {data.hosts.map((host) => (
-            <article className="host-card" key={host.id}>
-              <div className="host-top"><h3>{host.name}</h3><StatusBadge status={host.status} /></div>
-              <p>{host.role} · Uptime {host.uptime}</p>
-              <div className="usage-grid">
-                <span>CPU {host.cpu}%</span><span>Memory {host.memory}%</span><span>Storage {host.storage}%</span>
-                {host.gpu !== undefined ? <span>GPU {host.gpu}%</span> : <span>GPU n/a</span>}
-              </div>
-              <p className="trend">Trend: {host.trend}</p>
-            </article>
+        <nav className="hud-nav">
+          {navItems.map((item, index) => (
+            <button key={item} className={index === 0 ? 'active' : ''}>{item}</button>
           ))}
+        </nav>
+        <div className="hud-sidebar-summary">
+          <p>SENSORS ONLINE <strong>{onlineHosts}/{data.hosts.length}</strong></p>
+          <p>ALERT CHANNELS <strong>{data.activeAlerts}</strong></p>
+          <p>AI HOSTS <strong>{data.ai.availableHosts.length}</strong></p>
         </div>
-      </section>
+      </aside>
 
-      <section className="panel">
-        <SectionHeader title="Services" subtitle="Application and platform services" />
-        <div className="table-like">
-          {data.services.map((service) => <div key={service.id} className="row"><strong>{service.name}</strong><StatusBadge status={service.status} /><span>{service.host}</span><span>{service.uptime}</span><span>{service.latencyMs}ms</span><span>{service.tags.join(', ')}</span></div>)}
-        </div>
-      </section>
+      <main className="hud-main">
+        <header className="top-bar hud-panel">
+          <div>
+            <p className="eyebrow">Current Section</p>
+            <h2>Command Dashboard</h2>
+          </div>
+          <div className="top-meta">
+            <span>Global <StatusBadge status={data.overallStatus} /></span>
+            <span>Last Updated {new Date(data.updatedAt).toLocaleTimeString()}</span>
+            <span>API MODE <strong>MOCK</strong></span>
+            <button className="refresh-btn" onClick={refresh}>Refresh</button>
+          </div>
+        </header>
 
-      <section className="panel two-col">
-        <div>
-          <SectionHeader title="AI Infrastructure" subtitle="Inference and model serving" />
-          <p>Hosts: {data.ai.availableHosts.join(', ')}</p><p>Active Model: {data.ai.activeModel}</p>
-          <p>VRAM: {data.ai.vramUsedGb}GB / {data.ai.vramTotalGb}GB</p><p>Queue Depth: {data.ai.queueDepth}</p>
-          <p>Availability: {data.ai.inferenceAvailable ? 'Ready' : 'Unavailable'}</p>
-        </div>
-        <div>
-          <SectionHeader title="Incident Feed" subtitle="Recent operational activity" />
-          {data.incidents.length === 0 ? <p>No incidents in the last hour.</p> : data.incidents.map((incident) => <div key={incident.id} className="incident"><StatusBadge status={incident.status} /><span>{incident.message}</span><small>{incident.time}</small></div>)}
-        </div>
-      </section>
+        <section className="overview-strip">
+          <article className="hud-panel stat"><p>Active Alerts</p><strong>{data.activeAlerts}</strong></article>
+          <article className="hud-panel stat"><p>Hosts Online</p><strong>{onlineHosts}/{data.hosts.length}</strong></article>
+          <article className="hud-panel stat"><p>Services</p><strong>{data.services.length}</strong></article>
+          <article className="hud-panel stat"><p>Queue Depth</p><strong>{data.ai.queueDepth}</strong></article>
+        </section>
+
+        <section className="center-grid">
+          <article className="hud-panel ai-core">
+            <h3>AI Core</h3>
+            <div className="radar-wrap">
+              <div className="radar-ring"><div className="radar-ring inner" /><div className="pulse-dot" /></div>
+              <div className="ai-readout">
+                <p>MODEL</p><strong>{data.ai.activeModel}</strong>
+                <p>VRAM</p><strong>{data.ai.vramUsedGb} / {data.ai.vramTotalGb} GB ({totalVramPct}%)</strong>
+                <p>QUEUE</p><strong>{data.ai.queueDepth}</strong>
+                <p>HOST STATUS</p><strong>{data.ai.inferenceAvailable ? 'READY' : 'OFFLINE'}</strong>
+              </div>
+            </div>
+          </article>
+
+          <article className="hud-panel">
+            <h3>Host Modules</h3>
+            <div className="host-grid">
+              {data.hosts.map((host) => (
+                <div className="host-card" key={host.id}>
+                  <div className="host-top"><h4>{host.name}</h4><StatusBadge status={host.status} /></div>
+                  <p className="muted">{host.role} · uptime {host.uptime}</p>
+                  <Meter label="CPU" value={host.cpu} />
+                  <Meter label="Memory" value={host.memory} />
+                  <Meter label="Storage" value={host.storage} />
+                  <Meter label="GPU" value={host.gpu} />
+                </div>
+              ))}
+            </div>
+          </article>
+        </section>
+
+        <section className="hud-panel">
+          <h3>Service Telemetry</h3>
+          <div className="service-rows">
+            {data.services.map((service) => (
+              <div key={service.id} className="service-row">
+                <strong>{service.name}</strong>
+                <StatusBadge status={service.status} />
+                <span>{service.host}</span>
+                <span>{service.uptime}</span>
+                <span>{service.latencyMs}ms</span>
+                <small>{service.tags.join(' · ')}</small>
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
+
+      <aside className="hud-rail hud-panel">
+        <h3>Incident / Event Feed</h3>
+        {data.incidents.map((incident) => (
+          <article key={incident.id} className="incident-item">
+            <div className="incident-head"><StatusBadge status={incident.status} /><span>{incident.time}</span></div>
+            <p>{incident.message}</p>
+          </article>
+        ))}
+      </aside>
     </div>
   );
 }
