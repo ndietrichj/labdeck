@@ -1,5 +1,7 @@
 export type Status = 'healthy' | 'warning' | 'critical' | 'unknown';
 
+export type ServiceCategory = 'web' | 'ai-runtime' | 'automation' | 'monitoring' | 'network' | 'media' | 'jobs';
+
 export interface Host {
   id: string;
   name: string;
@@ -18,8 +20,12 @@ export interface Service {
   name: string;
   status: Status;
   host: string;
+  category: ServiceCategory;
   uptime: string;
   latencyMs: number;
+  lastHeartbeat: string;
+  activeModel?: string;
+  queueDepth?: number;
   tags: string[];
 }
 
@@ -28,6 +34,27 @@ export interface Incident {
   message: string;
   status: Status;
   time: string;
+}
+
+export interface Job {
+  id: string;
+  name: string;
+  status: Status;
+  lastRun: string;
+  nextRun: string;
+  duration: string;
+  targetHost: string;
+  lastResult: string;
+}
+
+export interface AiProvider {
+  id: string;
+  name: string;
+  latencyMs: number;
+  tokensPerSec: number;
+  contextWindow: string;
+  vramUsage: string;
+  queueDepth: number;
 }
 
 export interface AiInfra {
@@ -45,6 +72,8 @@ export interface DashboardData {
   hosts: Host[];
   services: Service[];
   incidents: Incident[];
+  jobs: Job[];
+  aiProviders: AiProvider[];
   ai: AiInfra;
   updatedAt: string;
 }
