@@ -1,0 +1,15 @@
+import type { Status } from '../types/dashboard';
+
+export const statusLabel: Record<Status, string> = {
+  healthy: 'Healthy',
+  warning: 'Warning',
+  critical: 'Critical',
+  unknown: 'Unknown'
+};
+
+export const statusClass: Record<Status, string> = {
+  healthy: 'status-healthy',
+  warning: 'status-warning',
+  critical: 'status-critical',
+  unknown: 'status-unknown'
+};
