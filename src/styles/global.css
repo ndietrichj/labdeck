@@ -97,3 +97,7 @@ h2,h3 { margin:.1rem 0 .4rem; }
   .hud-shell { grid-template-columns: 180px 1fr; }
   .hud-rail { grid-column: 1 / -1; }
 }
+.filters { display:flex; gap:.4rem; margin-bottom:.45rem; }
+.filters input, .filters select { background:#071521; color:var(--text); border:1px solid #1a4c58; border-radius:6px; padding:.32rem .45rem; font-size:.72rem; width:100%; }
+.service-btn { width:100%; background:#071521; color:var(--text); text-align:left; cursor:pointer; }
+.chat-panel { min-height:260px; max-height:360px; overflow:auto; border:1px solid #184a56; border-radius:8px; padding:.45rem; background:#06111c; margin-bottom:.4rem; }
