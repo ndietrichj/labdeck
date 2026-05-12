@@ -5,6 +5,18 @@ export type ServiceCategory = 'web' | 'ai-runtime' | 'automation' | 'monitoring'
 export type AlertSeverity = 1 | 2 | 3 | 4;
 export type AIProviderType = 'ollama' | 'llama-cpp' | 'vllm' | 'remote';
 
+export interface Model {
+  id: string;
+  name: string;
+  provider: string;
+  contextWindow: string;
+  vramRequiredGb: number;
+  isOnline: boolean;
+  tags: string[];
+}
+
+export interface ModelInfo extends Omit<Model, 'provider'> {}
+
 // Services
 export interface Service {
   id: string;
@@ -53,16 +65,6 @@ export interface WorkflowRunHistory {
 }
 
 // AI / Models
-export interface Model {
-  id: string;
-  name: string;
-  provider: string;
-  contextWindow: string;
-  vramRequiredGb: number;
-  isOnline: boolean;
-  tags: string[];
-}
-
 export interface Runtime {
   id: string;
   provider: AIProviderType;
@@ -93,6 +95,7 @@ export interface AIProvider {
   uptime: string;
   status: Status;
   models: string[];
+  availableModels: ModelInfo[];
 }
 
 // Nodes / Infrastructure
@@ -107,6 +110,13 @@ export interface Node {
   storage: number;
   gpu?: number;
   network: { rx: number; tx: number };
+  reservedIp: string;
+  userId: string;
+  disconnectedCount: number;
+  lastDisconnect: string;
+  wifiSignalStrength?: number;
+  healthInterval?: number;
+  lastHeartbeat?: string;
 }
 
 export interface NodeTelemetry {
