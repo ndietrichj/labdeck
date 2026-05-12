@@ -1,29 +1,30 @@
 # LabDeck
 
-Premium desktop homelab operations dashboard built with Tauri + React + TypeScript.
+Tauri + React + TypeScript homelab command HUD with a DarkSignal/cyberpunk operations style.
 
-> **v0.2 note:** This release keeps mock telemetry data and expands the cyberpunk HUD into a compact 5-page operations workspace.
+## v0.2 Focus
 
-## App Structure (v0.2)
+v0.2 is a **refinement pass** of the existing 5-page shell with denser layouts, actionable mock controls, and tactical operator workflows.
 
-LabDeck now ships with five local-state pages (no router):
+## Current 5-Page Structure
 
-1. **HUD** — service-first “Live Services Matrix”, infrastructure node strip, and incident feed.
-2. **Services** — searchable/filterable service inventory with service detail panel.
-3. **AI** — local AI workspace MVP with provider/model selectors, mock chat loop, telemetry rail.
-4. **Automation** — recurring jobs table and compact log preview.
-5. **Config** — mock runtime settings panel (no persistence yet).
+1. **HUD**: live services matrix, infrastructure telemetry, summary tiles, incident rail.
+2. **Services**: searchable inventory, category chips, service detail actions.
+3. **AI**: local workspace with provider/model/agent mode, telemetry, mock tool-call session tracking.
+4. **Automation**: recurring workflows, manual trigger stubs, drill-down context.
+5. **Config**: mock connection/runtime settings and node/service endpoint placeholders.
 
-## Architecture Overview
+## Mock Telemetry Note
 
-- `src/pages`: page-level orchestration (`DashboardPage`)
-- `src/components`: reusable UI primitives (`StatusBadge`, `MetricCard`, `SectionHeader`)
-- `src/layouts`: shell/layout composition
-- `src/data`: centralized mock data
-- `src/hooks`: data lifecycle hooks
-- `src/lib`: API facade + status formatting utilities
-- `src/types`: strongly typed domain models
-- `src/styles`: global design system + theme tokens
+This build intentionally uses centralized mock data and local component state only. No live backend, Ollama, or internal network calls are executed in this pass.
+
+## Future Backend / Ollama Integration Roadmap
+
+- Replace mock API facade with real `/api/dashboard` polling.
+- Wire service/automation actions to backend command queue.
+- Connect AI workspace to Ollama + model router endpoints.
+- Persist user settings (density, refresh interval, privacy mode).
+- Add historical telemetry storage and richer trend visualizations.
 
 ## Development
 
@@ -31,20 +32,5 @@ LabDeck now ships with five local-state pages (no router):
 npm install
 npm run dev
 npm run build
-npm run tauri:dev
-# or
-npm run tauri -- dev
+npm run tauri dev
 ```
-
-## v0.2 Roadmap
-
-- [x] Local-state sidebar navigation across 5 pages
-- [x] Service-first HUD with live services matrix + infrastructure nodes
-- [x] Services inventory with category filter + detail panel
-- [x] Local AI workspace MVP with mock send/response flow
-- [x] Automation job board + log preview
-- [x] Config page with mock settings controls
-- [ ] Real backend integration (`/api/dashboard`)
-- [ ] Persisted user preferences (density/visibility/privacy)
-- [ ] Actionable incident acknowledgements + timeline filters
-- [ ] Model tool invocation + local agent execution wiring
