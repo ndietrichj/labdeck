@@ -10,3 +10,4 @@ src-tauri/target/
 *.exp
 *.ilk
 *.tsbuildinfo
+.env.local
