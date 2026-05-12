@@ -1,0 +1,10 @@
+﻿
+.hud-panel,
+.panel,
+.ai-layout,
+.services-layout,
+.config-layout,
+.automation-layout {
+  position: relative !important;
+  inset: auto !important;
+}

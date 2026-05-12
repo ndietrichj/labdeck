@@ -1,4 +1,4 @@
-:root{color-scheme:dark;font-family:Inter,'SF Pro Display','Orbitron','Segoe UI',sans-serif;--bg:#060910;--panel:rgba(17,24,39,.72);--line:#2b3d59;--text:#e8f4ff;--muted:#9db2cc;--ok:#27d799;--warn:#ffb020;--crit:#ff4d6d;--active:#45a2ff}
+﻿:root{color-scheme:dark;font-family:Inter,'SF Pro Display','Orbitron','Segoe UI',sans-serif;--bg:#060910;--panel:rgba(17,24,39,.72);--line:#2b3d59;--text:#e8f4ff;--muted:#9db2cc;--ok:#27d799;--warn:#ffb020;--crit:#ff4d6d;--active:#45a2ff}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#101a2c,#060910 45%);color:var(--text)}
 .hud-shell{display:grid;grid-template-columns:220px minmax(0,1fr) 280px;gap:10px;padding:10px;min-height:100vh}.hud-panel{backdrop-filter:blur(10px);background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px;box-shadow:0 8px 28px rgba(0,0,0,.25)}
 .hud-sidebar h1{font-family:'Orbitron',Inter,sans-serif;letter-spacing:.22em;font-size:1.1rem;margin:4px 0 10px}.hud-nav{display:grid;gap:6px}.hud-nav button{padding:8px 10px;background:#0d1625;border:1px solid #2b3d59;color:var(--text);border-radius:10px;text-align:left}.hud-nav .active{border-color:var(--active);box-shadow:0 0 0 1px var(--active) inset}
@@ -14,3 +14,446 @@
 .status-badge{padding:2px 8px;border-radius:999px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}.status-healthy{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}.status-warning{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}.status-critical{background:color-mix(in srgb,var(--crit) 18%,transparent);color:var(--crit)}.status-unknown{background:rgba(148,163,184,.2);color:#cbd5e1}
 .incident-item{padding:8px;border-left:3px solid var(--active);background:#0b1422;margin-bottom:6px}.incident-item.warning{border-left-color:var(--warn)}.incident-item.critical{border-left-color:var(--crit)}.incident-head{display:flex;justify-content:space-between}
 .compact p{margin:6px 0;font-size:.8rem}
+
+
+.config-chip {
+  display: inline-flex;
+  align-items: center;
+  margin: 3px 6px 3px 0;
+  padding: 5px 9px;
+  border: 1px solid rgba(80, 190, 255, 0.35);
+  border-radius: 999px;
+  background: rgba(80, 190, 255, 0.08);
+  color: var(--text);
+}
+
+.top-bar {
+  min-height: 96px !important;
+  padding-block: 18px !important;
+}
+
+.page-hero,
+.top-bar,
+.hud-header,
+.page-header {
+  min-height: 88px !important;
+  max-height: 120px !important;
+  padding: 18px 22px !important;
+}
+
+.agent-console {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  height: 100%;
+  min-height: 420px;
+  gap: 12px;
+}
+
+.agent-transcript {
+  overflow: auto;
+  border: 1px solid rgba(90, 170, 255, 0.25);
+  border-radius: 16px;
+  padding: 14px;
+  background: rgba(5, 12, 24, 0.35);
+}
+
+.agent-message {
+  margin-bottom: 14px;
+}
+
+.agent-role {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 6px;
+}
+
+.agent-message pre {
+  white-space: pre-wrap;
+  margin: 0;
+  font-family: inherit;
+  line-height: 1.45;
+}
+
+.agent-message.user pre {
+  color: #d8ecff;
+}
+
+.agent-message.assistant pre {
+  color: #bfffe4;
+}
+
+.agent-thinking {
+  color: #ffc857;
+}
+
+.agent-composer {
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  gap: 10px;
+}
+
+.agent-composer textarea {
+  min-height: 72px;
+  resize: vertical;
+  border-radius: 14px;
+  border: 1px solid rgba(90, 170, 255, 0.3);
+  background: rgba(8, 18, 34, 0.8);
+  color: var(--text);
+  padding: 12px;
+}
+
+.agent-composer button {
+  border-radius: 14px;
+  border: 1px solid rgba(80, 180, 255, 0.55);
+  background: rgba(30, 100, 180, 0.35);
+  color: var(--text);
+  font-weight: 800;
+}
+
+.hud-main > .hud-panel:first-child,
+.hud-content > .hud-panel:first-child,
+main > .hud-panel:first-child,
+.page-hero,
+.top-bar,
+.page-header,
+.hud-header {
+  min-height: 76px !important;
+  max-height: 96px !important;
+  height: auto !important;
+  padding: 16px 20px !important;
+}
+
+.hud-main,
+.hud-content,
+.main-panel,
+.page-body {
+  gap: 12px !important;
+}
+
+.ai-layout {
+  display: grid !important;
+  grid-template-columns: minmax(0, 2.5fr) minmax(220px, 0.8fr) !important;
+  gap: 12px !important;
+  align-items: stretch !important;
+  min-height: 520px !important;
+}
+
+.chat-workspace,
+.chat-panel,
+.agent-console {
+  min-height: 500px !important;
+  height: 100% !important;
+}
+
+.chat-panel {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.agent-console {
+  display: grid !important;
+  grid-template-rows: 1fr auto auto !important;
+  gap: 10px !important;
+}
+
+.agent-transcript {
+  min-height: 360px !important;
+}
+
+.agent-composer {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 120px !important;
+  gap: 10px !important;
+}
+
+.agent-composer textarea {
+  min-height: 72px !important;
+}
+
+.agent-endpoint {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* v1 layout tighten */
+.page-hero,
+.top-bar,
+.page-header,
+.hud-header,
+.section-hero {
+  min-height: 56px !important;
+  max-height: 72px !important;
+  height: 64px !important;
+  padding: 12px 18px !important;
+  margin-bottom: 10px !important;
+}
+
+.hud-main,
+.hud-content,
+.main-panel,
+.page-body {
+  gap: 10px !important;
+}
+
+.hud-panel {
+  margin-top: 0 !important;
+}
+
+.nodes-grid,
+.infrastructure-grid {
+  margin-top: 0 !important;
+}
+
+/* FORCE v1 compact vertical layout */
+.hud-shell,
+.app-shell,
+.dashboard-shell {
+  height: 100vh !important;
+  max-height: 100vh !important;
+  overflow: hidden !important;
+}
+
+.hud-main,
+.main-panel,
+.page-body,
+.hud-content {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  min-height: 0 !important;
+}
+
+.hud-main > section:first-child,
+.main-panel > section:first-child,
+.page-body > section:first-child,
+.hud-content > section:first-child,
+.hud-panel:first-child,
+.page-hero,
+.top-bar,
+.page-header,
+.hud-header {
+  flex: 0 0 72px !important;
+  min-height: 72px !important;
+  max-height: 72px !important;
+  height: 72px !important;
+  padding: 14px 20px !important;
+}
+
+.hud-main > section:not(:first-child),
+.main-panel > section:not(:first-child),
+.page-body > section:not(:first-child),
+.hud-content > section:not(:first-child) {
+  flex: 0 1 auto !important;
+}
+
+.infrastructure-section,
+.services-section,
+.automation-section,
+.config-section,
+.ai-layout {
+  margin-top: 0 !important;
+}
+
+.nodes-grid,
+.infrastructure-grid {
+  align-content: start !important;
+}
+
+
+
+
+/* v1 final sidebar alignment */
+aside,
+.sidebar,
+.hud-sidebar,
+.side-nav {
+  min-width: 220px !important;
+  width: 220px !important;
+  padding: 20px 16px !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+}
+
+aside nav,
+.sidebar nav,
+.hud-sidebar nav,
+.side-nav nav {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  margin-top: 18px !important;
+}
+
+aside button,
+.sidebar button,
+.hud-sidebar button,
+.side-nav button {
+  width: 100% !important;
+  display: block !important;
+}
+
+aside h1,
+.sidebar h1,
+.hud-sidebar h1,
+.side-nav h1,
+.brand,
+.logo {
+  margin-bottom: 12px !important;
+}
+
+/* v1 hard fix: sidebar must be full-height, not treated like page header */
+aside.hud-panel,
+.sidebar.hud-panel,
+.hud-sidebar.hud-panel,
+.side-nav.hud-panel,
+aside.hud-panel:first-child,
+.sidebar.hud-panel:first-child,
+.hud-sidebar.hud-panel:first-child,
+.side-nav.hud-panel:first-child {
+  flex: none !important;
+  height: calc(100vh - 28px) !important;
+  min-height: calc(100vh - 28px) !important;
+  max-height: calc(100vh - 28px) !important;
+  padding: 24px 18px !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+}
+
+aside.hud-panel nav,
+.sidebar.hud-panel nav,
+.hud-sidebar.hud-panel nav,
+.side-nav.hud-panel nav,
+aside.hud-panel .nav,
+.sidebar.hud-panel .nav,
+.hud-sidebar.hud-panel .nav,
+.side-nav.hud-panel .nav {
+  position: static !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  margin-top: 12px !important;
+}
+
+aside.hud-panel button,
+.sidebar.hud-panel button,
+.hud-sidebar.hud-panel button,
+.side-nav.hud-panel button {
+  position: static !important;
+  width: 100% !important;
+  transform: none !important;
+}
+
+
+
+
+
+
+
+
+
+/* v1 final AI visible composer fix */
+.ai-layout {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 260px !important;
+  gap: 16px !important;
+  align-items: start !important;
+  width: 100% !important;
+}
+
+.chat-workspace,
+.chat-panel {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+}
+
+.chat-panel {
+  padding: 16px !important;
+}
+
+.agent-console {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  padding: 16px !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+}
+
+.agent-transcript {
+  flex: none !important;
+  height: 340px !important;
+  min-height: 340px !important;
+  max-height: 340px !important;
+  overflow-y: auto !important;
+  padding: 18px !important;
+  box-sizing: border-box !important;
+}
+
+.agent-composer {
+  flex: none !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 116px !important;
+  gap: 12px !important;
+  width: 100% !important;
+  height: 76px !important;
+  box-sizing: border-box !important;
+}
+
+.agent-composer textarea {
+  width: 100% !important;
+  height: 76px !important;
+  min-height: 76px !important;
+  max-height: 76px !important;
+  resize: none !important;
+  box-sizing: border-box !important;
+}
+
+.agent-composer button {
+  width: 116px !important;
+  height: 76px !important;
+  border-radius: 14px !important;
+  font-weight: 800 !important;
+  background: linear-gradient(135deg, #2563eb, #0ea5e9) !important;
+  border: 1px solid rgba(125, 211, 252, 0.55) !important;
+}
+
+.agent-endpoint {
+  display: none !important;
+}
+
+/* v1 align agent console with selector bar */
+.ai-layout .chat-panel {
+  padding: 16px !important;
+}
+
+.ai-layout .agent-console {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+}
+
+.ai-layout .agent-transcript,
+.ai-layout .agent-composer {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.ai-layout .agent-composer {
+  grid-template-columns: minmax(0, 1fr) 132px !important;
+}
+
+.ai-layout .agent-composer button {
+  width: 132px !important;
+  min-width: 132px !important;
+}

@@ -1,4 +1,4 @@
-import type { DashboardData } from '../types/dashboard';
+﻿import type { DashboardData } from '../types/dashboard';
 
 export const mockDashboardData: DashboardData = {
   overallStatus: 'warning',
@@ -48,3 +48,5 @@ export const mockDashboardData: DashboardData = {
   ],
   updatedAt: new Date().toISOString()
 };
+
+

@@ -83,8 +83,8 @@ app.get("/api/dashboard", async (_req, res) => {
     hosts: [
       {
         id: "node-a",
-        name: "Controller Node A",
-        role: "Mac Mini Controller",
+        name: "Mac Mini M4",
+        role: "Controller Node / Agent Host",
         status: ollamaMac.ok ? "healthy" : "warning",
         uptime: "live",
         cpu: 0,
@@ -94,8 +94,8 @@ app.get("/api/dashboard", async (_req, res) => {
       },
       {
         id: "node-b",
-        name: "Inference Node B",
-        role: "GB10 Inference",
+        name: "Dell Pro Max GB10",
+        role: "Inference Host via Ollama / llama.cpp",
         status: ollamaGb10.ok || scheduler.ok || llamaCpp.ok ? "healthy" : "warning",
         uptime: "live",
         cpu: 0,
@@ -106,8 +106,8 @@ app.get("/api/dashboard", async (_req, res) => {
       },
       {
         id: "node-c",
-        name: "Services Node C",
-        role: "Pi 5 / App Runtime",
+        name: "Raspberry Pi 5",
+        role: "App & Test/Dev Server Host",
         status: prometheus.ok ? "healthy" : "warning",
         uptime: "live",
         cpu: 0,
@@ -143,7 +143,7 @@ app.get("/api/dashboard", async (_req, res) => {
         id: "ollama-gb10",
         name: "Ollama Server - GB10",
         status: ollamaGb10.ok ? "healthy" : "warning",
-        host: "Inference Node B",
+        host: "Dell Pro Max GB10",
         category: "ai-runtime",
         uptime: "live",
         latencyMs: 0,
@@ -156,7 +156,7 @@ app.get("/api/dashboard", async (_req, res) => {
         id: "ollama-mac",
         name: "Ollama Server - Mac Mini",
         status: ollamaMac.ok ? "healthy" : "warning",
-        host: "Controller Node A",
+        host: "Mac Mini M4",
         category: "ai-runtime",
         uptime: "live",
         latencyMs: 0,
@@ -169,7 +169,7 @@ app.get("/api/dashboard", async (_req, res) => {
         id: "gb10-scheduler",
         name: "GB10 Scheduler / Model Router",
         status: scheduler.ok ? "healthy" : "warning",
-        host: "Inference Node B",
+        host: "Dell Pro Max GB10",
         category: "ai-runtime",
         uptime: "live",
         latencyMs: 0,
@@ -181,7 +181,7 @@ app.get("/api/dashboard", async (_req, res) => {
         id: "llamacpp-gb10",
         name: "llama.cpp Server - GB10",
         status: llamaCpp.ok ? "healthy" : "warning",
-        host: "Inference Node B",
+        host: "Dell Pro Max GB10",
         category: "ai-runtime",
         uptime: "live",
         latencyMs: 0,
@@ -192,7 +192,7 @@ app.get("/api/dashboard", async (_req, res) => {
         id: "prometheus",
         name: "Prometheus",
         status: prometheus.ok ? "healthy" : "warning",
-        host: "Services Node C",
+        host: "Raspberry Pi 5",
         category: "monitoring",
         uptime: "live",
         latencyMs: 0,
@@ -282,7 +282,7 @@ app.get("/api/dashboard", async (_req, res) => {
         ],
 
     ai: {
-      availableHosts: ["Inference Node B", "Controller Node A"],
+      availableHosts: ["Dell Pro Max GB10", "Mac Mini M4"],
       activeModel: models[0]?.name ?? "none",
       vramUsedGb: 0,
       vramTotalGb: 0,
@@ -318,7 +318,7 @@ app.get("/api/dashboard", async (_req, res) => {
         nextRun: "scheduled",
         lastRun: new Date().toISOString(),
         durationSec: 0,
-        host: "Services Node C",
+        host: "Raspberry Pi 5",
         summary: "placeholder",
       },
     ],
@@ -348,6 +348,52 @@ app.get("/api/dashboard", async (_req, res) => {
   res.json(data);
 });
 
+
+app.post("/api/chat", async (req, res) => {
+  const { providerId, model, prompt, messages } = req.body ?? {};
+
+  if (!prompt || !model) {
+    return res.status(400).json({ error: "Missing prompt or model" });
+  }
+
+  try {
+    if (providerId === "sched") {
+      const upstream = await axios.post(`${env.scheduler}/v1/chat/completions`, {
+        model,
+        messages: Array.isArray(messages) ? messages : [{ role: "user", content: prompt }],
+        stream: false
+      }, { timeout: 120000 });
+
+      return res.json({
+        providerId,
+        model,
+        response: upstream.data?.choices?.[0]?.message?.content ?? JSON.stringify(upstream.data)
+      });
+    }
+
+    const baseUrl = providerId === "ollama-mac" ? env.ollamaMac : env.ollamaGb10;
+
+    const upstream = await axios.post(`${baseUrl}/api/generate`, {
+      model,
+      prompt,
+      stream: false
+    }, { timeout: 120000 });
+
+    return res.json({
+      providerId,
+      model,
+      response: upstream.data?.response ?? JSON.stringify(upstream.data)
+    });
+  } catch (error: any) {
+    return res.status(502).json({
+      error: error?.response?.data?.error ?? error?.message ?? "model request failed"
+    });
+  }
+});
 app.listen(port, "0.0.0.0", () => {
   console.log(`LabDeck telemetry bridge listening on http://localhost:${port}/api`);
 });
+
+
+
+
