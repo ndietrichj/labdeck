@@ -1,13 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { mockDashboardData } from '../data/mockDashboardData';
-import type { DashboardData } from '../types';
-
-// Simulate API fetch with setTimeout (can be replaced with real fetch later)
-const fetchDashboardData = async (): Promise<DashboardData> => {
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 300));
-  return mockDashboardData;
-};
+import { fetchDashboardData } from '../lib/api';
+import type { DashboardData } from '../types/dashboard';
 
 export function useDashboardData() {
   const [data, setData] = useState<DashboardData | null>(null);
