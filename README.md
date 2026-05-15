@@ -1,3 +1,8 @@
+<img width="1199" height="772" alt="image" src="https://github.com/user-attachments/assets/1f230f45-0c6e-49a7-b868-0e0c9ee4f669" />
+
+<img width="1198" height="764" alt="image" src="https://github.com/user-attachments/assets/01ffb03f-4076-42ea-a8ec-bb98f8cde117" />
+
+
 # LabDeck
 
 Premium desktop homelab operations dashboard built with Tauri + React + TypeScript.
