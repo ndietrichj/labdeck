@@ -1,8 +1,11 @@
-﻿#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+mod git_update;
 
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .invoke_handler(tauri::generate_handler![check_updates])
         .setup(|app| {
             #[cfg(not(debug_assertions))]
             {
@@ -20,4 +23,9 @@ fn main() {
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[tauri::command]
+fn check_updates() -> git_update::GitUpdateStatus {
+    git_update::check_git_status()
 }
