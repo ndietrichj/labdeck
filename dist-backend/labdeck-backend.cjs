@@ -33959,87 +33959,50 @@ var import_node_child_process2 = require("node:child_process");
 var import_node_util2 = require("node:util");
 var execFileAsync2 = (0, import_node_util2.promisify)(import_node_child_process2.execFile);
 var SSH_TARGET = process.env.LABDECK_MAC_SSH_TARGET || "mac";
-var SSH_TIMEOUT_MS = Number(process.env.LABDECK_SSH_TIMEOUT_MS || "3000");
-var MACOS_TELEMETRY_COMMAND = [
-  "cpu_line=$(top -l 1 | grep 'CPU usage' | head -1)",
-  `cpu_user=$(printf '%s\\n' "$cpu_line" | sed -E 's/.*CPU usage: ([0-9.]+)% user.*/\\1/')`,
-  `cpu_sys=$(printf '%s\\n' "$cpu_line" | sed -E 's/.*user, ([0-9.]+)% sys.*/\\1/')`,
-  `cpu=$(awk -v u="$cpu_user" -v s="$cpu_sys" 'BEGIN { printf "%d", u + s }')`,
-  `storage=$(df / | awk 'NR==2 { gsub(/%/, "", $5); print $5 }')`,
-  "page_size=$(pagesize 2>/dev/null || echo 4096)",
-  "vm=$(vm_stat)",
-  `free=$(printf '%s\\n' "$vm" | awk '/Pages free/ { gsub(/\\./, "", $3); print $3 }')`,
-  `inactive=$(printf '%s\\n' "$vm" | awk '/Pages inactive/ { gsub(/\\./, "", $3); print $3 }')`,
-  `speculative=$(printf '%s\\n' "$vm" | awk '/Pages speculative/ { gsub(/\\./, "", $3); print $3 }')`,
-  `wired=$(printf '%s\\n' "$vm" | awk '/Pages wired down/ { gsub(/\\./, "", $4); print $4 }')`,
-  `active=$(printf '%s\\n' "$vm" | awk '/Pages active/ { gsub(/\\./, "", $3); print $3 }')`,
-  `compressed=$(printf '%s\\n' "$vm" | awk '/Pages occupied by compressor/ { gsub(/\\./, "", $5); print $5 }')`,
-  "free=${free:-0}; inactive=${inactive:-0}; speculative=${speculative:-0}; wired=${wired:-0}; active=${active:-0}; compressed=${compressed:-0}",
-  "used_pages=$((wired + active + compressed))",
-  "total_pages=$((used_pages + inactive + speculative + free))",
-  `memory=$(awk -v used="$used_pages" -v total="$total_pages" 'BEGIN { if (total > 0) printf "%d", (used / total) * 100; else printf "0" }')`,
-  'printf \'{"cpu":%s,"memory":%s,"storage":%s}\\n\' "${cpu:-0}" "${memory:-0}" "${storage:-0}"'
-].join("; ");
-async function getRemoteTelemetry(sshTarget = SSH_TARGET) {
-  const args = [
-    "-o",
-    "BatchMode=yes",
-    "-o",
-    "ConnectTimeout=3",
-    sshTarget,
-    MACOS_TELEMETRY_COMMAND
-  ];
-  try {
-    const { stdout, stderr } = await execFileAsync2("ssh", args, {
-      timeout: SSH_TIMEOUT_MS,
-      maxBuffer: 1024 * 64
-    });
-    if (stderr?.trim()) {
-      console.warn(`[remoteTelemetry] SSH stderr for ${sshTarget}: ${stderr.trim()}`);
-    }
-    const telemetry = parseTelemetryJson(stdout);
-    return {
-      ...telemetry,
-      success: true
-    };
-  } catch (error) {
-    const message = error?.message ?? String(error);
-    if (error?.code === "ETIMEDOUT" || message.includes("timed out")) {
-      console.warn(`[remoteTelemetry] SSH timeout for ${sshTarget}`);
-    } else if (error?.code === 255 || message.includes("Permission denied")) {
-      console.warn(`[remoteTelemetry] SSH authentication/connection failed for ${sshTarget}`);
-    } else {
-      console.warn(`[remoteTelemetry] SSH failed for ${sshTarget}: ${message}`);
-    }
-    return {
-      cpu: 0,
-      memory: 0,
-      storage: 0,
-      success: false,
-      error: message
-    };
-  }
-}
 async function getMacMiniRemoteTelemetry() {
   return getRemoteTelemetry(SSH_TARGET);
 }
-function parseTelemetryJson(output) {
+async function getRemoteTelemetry(sshTarget = SSH_TARGET) {
   try {
-    const data = JSON.parse(output.trim());
-    if (typeof data.cpu !== "number" || typeof data.memory !== "number" || typeof data.storage !== "number") {
-      throw new Error("Invalid telemetry structure");
+    const { stdout, stderr } = await execFileAsync2("ssh", [
+      "-o",
+      "BatchMode=yes",
+      "-o",
+      "ConnectTimeout=3",
+      sshTarget,
+      "top -l 1 | grep 'CPU usage' | head -1; df / | awk 'NR==2 {print $5}'; vm_stat | head -8"
+    ], { timeout: 5e3 });
+    if (stderr?.trim()) {
+      console.warn(`[remoteTelemetry] stderr: ${stderr.trim()}`);
     }
-    return {
-      cpu: clampPercent(data.cpu),
-      memory: clampPercent(data.memory),
-      storage: clampPercent(data.storage)
+    console.log("[remoteTelemetry] raw Mac stdout:", JSON.stringify(stdout));
+    const cpuMatch = stdout.match(/CPU usage:\s*([0-9.]+)% user,\s*([0-9.]+)% sys/);
+    const storageMatch = stdout.match(/\n\s*(\d+)%\s*\n/);
+    const freeMatch = stdout.match(/Pages free:\s+([0-9.]+)/);
+    const activeMatch = stdout.match(/Pages active:\s+([0-9.]+)/);
+    const inactiveMatch = stdout.match(/Pages inactive:\s+([0-9.]+)/);
+    const wiredMatch = stdout.match(/Pages wired down:\s+([0-9.]+)/);
+    const cpu = cpuMatch ? Math.round(Number(cpuMatch[1]) + Number(cpuMatch[2])) : 0;
+    const storage = storageMatch ? Number(storageMatch[1]) : 0;
+    const free = freeMatch ? Number(freeMatch[1]) : 0;
+    const active = activeMatch ? Number(activeMatch[1]) : 0;
+    const inactive = inactiveMatch ? Number(inactiveMatch[1]) : 0;
+    const wired = wiredMatch ? Number(wiredMatch[1]) : 0;
+    const totalPages = free + active + inactive + wired;
+    const usedPages = active + inactive + wired;
+    const memory = totalPages > 0 ? Math.round(usedPages / totalPages * 100) : 0;
+    const result = {
+      cpu: clampPercent(cpu),
+      memory: clampPercent(memory),
+      storage: clampPercent(storage),
+      success: cpu > 0 || memory > 0 || storage > 0
     };
-  } catch {
-    return {
-      cpu: 0,
-      memory: 0,
-      storage: 0
-    };
+    console.log("[remoteTelemetry] Mac Mini result:", result);
+    return result;
+  } catch (error) {
+    const message = error?.message ?? String(error);
+    console.warn(`[remoteTelemetry] SSH failed for ${sshTarget}: ${message}`);
+    return { cpu: 0, memory: 0, storage: 0, success: false, error: message };
   }
 }
 function clampPercent(value) {
