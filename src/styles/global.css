@@ -537,3 +537,146 @@ aside.hud-panel button,
 .git-update-dots span:nth-child(3) {
   animation-delay: 300ms;
 }
+
+/* Keep incident acknowledge buttons compact inside the right rail. */
+.incident-head .acknowledge-btn,
+.hud-rail .acknowledge-btn,
+aside.hud-panel .acknowledge-btn {
+  width: 36px !important;
+  min-width: 36px !important;
+  max-width: 36px !important;
+  height: 30px !important;
+  padding: 0 !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  flex: 0 0 36px !important;
+  line-height: 1 !important;
+  text-align: center !important;
+}
+
+/* Incident feed compact layout overrides */
+.hud-rail .incident-item,
+aside.hud-panel .incident-item {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  padding: 14px 10px 14px 14px !important;
+  margin-bottom: 18px !important;
+  background: transparent !important;
+  border-left-width: 3px !important;
+  border-radius: 0 !important;
+}
+
+.hud-rail .incident-head,
+aside.hud-panel .incident-head {
+  display: grid !important;
+  grid-template-columns: 76px 1fr 34px !important;
+  align-items: center !important;
+  gap: 8px !important;
+  justify-content: initial !important;
+}
+
+.hud-rail .incident-head .status-badge,
+aside.hud-panel .incident-head .status-badge {
+  width: 76px !important;
+  min-width: 76px !important;
+  max-width: 76px !important;
+  height: 24px !important;
+  padding: 0 !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  border-radius: 999px !important;
+  font-size: 0.68rem !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+}
+
+.hud-rail .incident-head span,
+aside.hud-panel .incident-head span {
+  font-size: 0.78rem !important;
+  line-height: 1.15 !important;
+  color: var(--muted) !important;
+  white-space: normal !important;
+}
+
+.hud-rail .incident-head .acknowledge-btn,
+aside.hud-panel .incident-head .acknowledge-btn {
+  width: 30px !important;
+  min-width: 30px !important;
+  max-width: 30px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  max-height: 30px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  flex: none !important;
+  border-radius: 6px !important;
+  font-size: 0.8rem !important;
+  line-height: 1 !important;
+}
+
+.hud-rail .incident-item p,
+aside.hud-panel .incident-item p {
+  margin: 0 !important;
+  font-size: 0.9rem !important;
+  line-height: 1.35 !important;
+}
+
+.hud-rail .incident-item.acknowledged,
+aside.hud-panel .incident-item.acknowledged {
+  opacity: 0.55 !important;
+}
+
+.hud-rail .incident-item.acknowledged p,
+aside.hud-panel .incident-item.acknowledged p {
+  text-decoration: line-through !important;
+}
+
+/* Incident feed: readable header layout + stronger severity colors */
+.hud-rail .incident-head,
+aside.hud-panel .incident-head {
+  grid-template-columns: 1fr 30px !important;
+  grid-template-areas:
+    "badge action"
+    "time action" !important;
+  gap: 4px 8px !important;
+}
+
+.hud-rail .incident-head .status-badge,
+aside.hud-panel .incident-head .status-badge {
+  grid-area: badge !important;
+  justify-self: start !important;
+  width: auto !important;
+  min-width: 72px !important;
+  max-width: none !important;
+  padding: 0 10px !important;
+}
+
+.hud-rail .incident-head > span,
+aside.hud-panel .incident-head > span {
+  grid-area: time !important;
+  justify-self: start !important;
+  white-space: nowrap !important;
+  width: auto !important;
+}
+
+.hud-rail .incident-head .acknowledge-btn,
+aside.hud-panel .incident-head .acknowledge-btn {
+  grid-area: action !important;
+  align-self: center !important;
+}
+
+.hud-rail .status-critical,
+aside.hud-panel .status-critical {
+  background: rgba(255, 77, 109, 0.32) !important;
+  color: #ff7d98 !important;
+}
+
+.hud-rail .status-warning,
+aside.hud-panel .status-warning {
+  background: rgba(255, 176, 32, 0.28) !important;
+  color: #ffc04d !important;
+}
