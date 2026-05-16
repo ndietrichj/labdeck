@@ -1,4 +1,5 @@
 ﻿import express from "express";
+import { getLocalHostTelemetry } from "./telemetry";
 import cors from "cors";
 import axios from "axios";
 
@@ -45,6 +46,7 @@ app.get("/api/health", (_req, res) => {
 });
 
 app.get("/api/dashboard", async (_req, res) => {
+  const localTelemetry = await getLocalHostTelemetry();
   const [ollamaMac, ollamaGb10, scheduler, llamaCpp, prometheus] = await Promise.all([
     getJson(`${env.ollamaMac}/api/tags`),
     getJson(`${env.ollamaGb10}/api/tags`),
@@ -98,10 +100,10 @@ app.get("/api/dashboard", async (_req, res) => {
         role: "Inference Host via Ollama / llama.cpp",
         status: ollamaGb10.ok || scheduler.ok || llamaCpp.ok ? "healthy" : "warning",
         uptime: "live",
-        cpu: 0,
-        memory: 0,
-        storage: 0,
-        gpu: 0,
+        cpu: localTelemetry.cpu,
+        memory: localTelemetry.memory,
+        storage: localTelemetry.storage,
+        gpu: localTelemetry.gpu ?? 0,
         network: { rx: 0, tx: 0 },
       },
       {
@@ -393,6 +395,7 @@ app.post("/api/chat", async (req, res) => {
 app.listen(port, "0.0.0.0", () => {
   console.log(`LabDeck telemetry bridge listening on http://localhost:${port}/api`);
 });
+
 
 
 
