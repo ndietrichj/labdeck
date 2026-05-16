@@ -33872,6 +33872,182 @@ var require_follow_redirects = __commonJS({
 
 // server/index.ts
 var import_express = __toESM(require_express2(), 1);
+
+// server/telemetry.ts
+var import_node_child_process = require("node:child_process");
+var import_node_os = __toESM(require("node:os"), 1);
+var import_node_util = require("node:util");
+var execFileAsync = (0, import_node_util.promisify)(import_node_child_process.execFile);
+function clampPct(value) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+async function sampleCpuPct(delayMs = 500) {
+  const start = import_node_os.default.cpus();
+  await new Promise((resolve) => setTimeout(resolve, delayMs));
+  const end = import_node_os.default.cpus();
+  let idleDelta = 0;
+  let totalDelta = 0;
+  for (let i = 0; i < end.length; i += 1) {
+    const s = start[i].times;
+    const e = end[i].times;
+    const startIdle = s.idle;
+    const endIdle = e.idle;
+    const startTotal = s.user + s.nice + s.sys + s.idle + s.irq;
+    const endTotal = e.user + e.nice + e.sys + e.idle + e.irq;
+    idleDelta += endIdle - startIdle;
+    totalDelta += endTotal - startTotal;
+  }
+  if (totalDelta <= 0) return 0;
+  return clampPct((1 - idleDelta / totalDelta) * 100);
+}
+function memoryPct() {
+  const total = import_node_os.default.totalmem();
+  const free = import_node_os.default.freemem();
+  if (total <= 0) return 0;
+  return clampPct((total - free) / total * 100);
+}
+async function windowsDiskPct() {
+  if (process.platform !== "win32") return 0;
+  try {
+    const { stdout } = await execFileAsync(
+      "powershell.exe",
+      [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        `(Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='C:'" | ForEach-Object { [math]::Round((($_.Size - $_.FreeSpace) / $_.Size) * 100) })`
+      ],
+      { timeout: 5e3 }
+    );
+    return clampPct(Number(stdout.trim()));
+  } catch {
+    return 0;
+  }
+}
+async function nvidiaGpuPct() {
+  try {
+    const { stdout } = await execFileAsync(
+      "nvidia-smi",
+      ["--query-gpu=utilization.gpu", "--format=csv,noheader,nounits"],
+      { timeout: 5e3 }
+    );
+    const first = stdout.split(/\r?\n/).map((line) => line.trim()).find(Boolean);
+    if (!first) return void 0;
+    return clampPct(Number(first));
+  } catch {
+    return void 0;
+  }
+}
+async function getLocalHostTelemetry() {
+  const [cpu, storage, gpu] = await Promise.all([
+    sampleCpuPct(),
+    windowsDiskPct(),
+    nvidiaGpuPct()
+  ]);
+  return {
+    cpu,
+    memory: memoryPct(),
+    storage,
+    ...gpu === void 0 ? {} : { gpu }
+  };
+}
+
+// server/remoteTelemetry.ts
+var import_node_child_process2 = require("node:child_process");
+var import_node_util2 = require("node:util");
+var execFileAsync2 = (0, import_node_util2.promisify)(import_node_child_process2.execFile);
+var SSH_TARGET = process.env.LABDECK_MAC_SSH_TARGET || "mac";
+var SSH_TIMEOUT_MS = Number(process.env.LABDECK_SSH_TIMEOUT_MS || "3000");
+var MACOS_TELEMETRY_COMMAND = [
+  "cpu_line=$(top -l 1 | grep 'CPU usage' | head -1)",
+  `cpu_user=$(printf '%s\\n' "$cpu_line" | sed -E 's/.*CPU usage: ([0-9.]+)% user.*/\\1/')`,
+  `cpu_sys=$(printf '%s\\n' "$cpu_line" | sed -E 's/.*user, ([0-9.]+)% sys.*/\\1/')`,
+  `cpu=$(awk -v u="$cpu_user" -v s="$cpu_sys" 'BEGIN { printf "%d", u + s }')`,
+  `storage=$(df / | awk 'NR==2 { gsub(/%/, "", $5); print $5 }')`,
+  "page_size=$(pagesize 2>/dev/null || echo 4096)",
+  "vm=$(vm_stat)",
+  `free=$(printf '%s\\n' "$vm" | awk '/Pages free/ { gsub(/\\./, "", $3); print $3 }')`,
+  `inactive=$(printf '%s\\n' "$vm" | awk '/Pages inactive/ { gsub(/\\./, "", $3); print $3 }')`,
+  `speculative=$(printf '%s\\n' "$vm" | awk '/Pages speculative/ { gsub(/\\./, "", $3); print $3 }')`,
+  `wired=$(printf '%s\\n' "$vm" | awk '/Pages wired down/ { gsub(/\\./, "", $4); print $4 }')`,
+  `active=$(printf '%s\\n' "$vm" | awk '/Pages active/ { gsub(/\\./, "", $3); print $3 }')`,
+  `compressed=$(printf '%s\\n' "$vm" | awk '/Pages occupied by compressor/ { gsub(/\\./, "", $5); print $5 }')`,
+  "free=${free:-0}; inactive=${inactive:-0}; speculative=${speculative:-0}; wired=${wired:-0}; active=${active:-0}; compressed=${compressed:-0}",
+  "used_pages=$((wired + active + compressed))",
+  "total_pages=$((used_pages + inactive + speculative + free))",
+  `memory=$(awk -v used="$used_pages" -v total="$total_pages" 'BEGIN { if (total > 0) printf "%d", (used / total) * 100; else printf "0" }')`,
+  'printf \'{"cpu":%s,"memory":%s,"storage":%s}\\n\' "${cpu:-0}" "${memory:-0}" "${storage:-0}"'
+].join("; ");
+async function getRemoteTelemetry(sshTarget = SSH_TARGET) {
+  const args = [
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "ConnectTimeout=3",
+    sshTarget,
+    MACOS_TELEMETRY_COMMAND
+  ];
+  try {
+    const { stdout, stderr } = await execFileAsync2("ssh", args, {
+      timeout: SSH_TIMEOUT_MS,
+      maxBuffer: 1024 * 64
+    });
+    if (stderr?.trim()) {
+      console.warn(`[remoteTelemetry] SSH stderr for ${sshTarget}: ${stderr.trim()}`);
+    }
+    const telemetry = parseTelemetryJson(stdout);
+    return {
+      ...telemetry,
+      success: true
+    };
+  } catch (error) {
+    const message = error?.message ?? String(error);
+    if (error?.code === "ETIMEDOUT" || message.includes("timed out")) {
+      console.warn(`[remoteTelemetry] SSH timeout for ${sshTarget}`);
+    } else if (error?.code === 255 || message.includes("Permission denied")) {
+      console.warn(`[remoteTelemetry] SSH authentication/connection failed for ${sshTarget}`);
+    } else {
+      console.warn(`[remoteTelemetry] SSH failed for ${sshTarget}: ${message}`);
+    }
+    return {
+      cpu: 0,
+      memory: 0,
+      storage: 0,
+      success: false,
+      error: message
+    };
+  }
+}
+async function getMacMiniRemoteTelemetry() {
+  return getRemoteTelemetry(SSH_TARGET);
+}
+function parseTelemetryJson(output) {
+  try {
+    const data = JSON.parse(output.trim());
+    if (typeof data.cpu !== "number" || typeof data.memory !== "number" || typeof data.storage !== "number") {
+      throw new Error("Invalid telemetry structure");
+    }
+    return {
+      cpu: clampPercent(data.cpu),
+      memory: clampPercent(data.memory),
+      storage: clampPercent(data.storage)
+    };
+  } catch {
+    return {
+      cpu: 0,
+      memory: 0,
+      storage: 0
+    };
+  }
+}
+function clampPercent(value) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+// server/index.ts
 var import_cors = __toESM(require_lib3(), 1);
 
 // node_modules/axios/lib/helpers/bind.js
@@ -38338,12 +38514,14 @@ app.get("/api/health", (_req, res) => {
   });
 });
 app.get("/api/dashboard", async (_req, res) => {
-  const [ollamaMac, ollamaGb10, scheduler, llamaCpp, prometheus] = await Promise.all([
+  const localTelemetry = await getLocalHostTelemetry();
+  const [ollamaMac, ollamaGb10, scheduler, llamaCpp, prometheus, macMiniTelemetry] = await Promise.all([
     getJson(`${env.ollamaMac}/api/tags`),
     getJson(`${env.ollamaGb10}/api/tags`),
     getJson(`${env.scheduler}/v1/models`),
     getJson(`${env.llamaCpp}/health`),
-    getJson(`${env.prometheus}/api/v1/query?query=up`)
+    getJson(`${env.prometheus}/api/v1/query?query=up`),
+    getMacMiniRemoteTelemetry()
   ]);
   const failedEndpoints = [
     !ollamaMac.ok && "ollama-mac",
@@ -38355,6 +38533,7 @@ app.get("/api/dashboard", async (_req, res) => {
   const macModels = ollamaMac.ok ? ollamaMac.data.models ?? [] : [];
   const gb10Models = ollamaGb10.ok ? ollamaGb10.data.models ?? [] : [];
   const schedulerModels = scheduler.ok ? scheduler.data.data ?? [] : [];
+  const macTelemetry = macMiniTelemetry.success ? macMiniTelemetry : { cpu: 0, memory: 0, storage: 0 };
   const models = [
     ...schedulerModels.map((m) => ({
       id: m.id,
@@ -38375,9 +38554,9 @@ app.get("/api/dashboard", async (_req, res) => {
         role: "Controller Node / Agent Host",
         status: ollamaMac.ok ? "healthy" : "warning",
         uptime: "live",
-        cpu: 0,
-        memory: 0,
-        storage: 0,
+        cpu: macTelemetry.cpu,
+        memory: macTelemetry.memory,
+        storage: macTelemetry.storage,
         network: { rx: 0, tx: 0 }
       },
       {
@@ -38386,10 +38565,10 @@ app.get("/api/dashboard", async (_req, res) => {
         role: "Inference Host via Ollama / llama.cpp",
         status: ollamaGb10.ok || scheduler.ok || llamaCpp.ok ? "healthy" : "warning",
         uptime: "live",
-        cpu: 0,
-        memory: 0,
-        storage: 0,
-        gpu: 0,
+        cpu: localTelemetry.cpu,
+        memory: localTelemetry.memory,
+        storage: localTelemetry.storage,
+        gpu: localTelemetry.gpu ?? 0,
         network: { rx: 0, tx: 0 }
       },
       {

@@ -1,5 +1,6 @@
 ﻿import express from "express";
 import { getLocalHostTelemetry } from "./telemetry";
+import { getMacMiniRemoteTelemetry } from "./remoteTelemetry";
 import cors from "cors";
 import axios from "axios";
 
@@ -47,12 +48,13 @@ app.get("/api/health", (_req, res) => {
 
 app.get("/api/dashboard", async (_req, res) => {
   const localTelemetry = await getLocalHostTelemetry();
-  const [ollamaMac, ollamaGb10, scheduler, llamaCpp, prometheus] = await Promise.all([
+  const [ollamaMac, ollamaGb10, scheduler, llamaCpp, prometheus, macMiniTelemetry] = await Promise.all([
     getJson(`${env.ollamaMac}/api/tags`),
     getJson(`${env.ollamaGb10}/api/tags`),
     getJson(`${env.scheduler}/v1/models`),
     getJson(`${env.llamaCpp}/health`),
     getJson(`${env.prometheus}/api/v1/query?query=up`),
+    getMacMiniRemoteTelemetry(),
   ]);
 
   const failedEndpoints = [
@@ -66,6 +68,9 @@ app.get("/api/dashboard", async (_req, res) => {
   const macModels = ollamaMac.ok ? ollamaMac.data.models ?? [] : [];
   const gb10Models = ollamaGb10.ok ? ollamaGb10.data.models ?? [] : [];
   const schedulerModels = scheduler.ok ? scheduler.data.data ?? [] : [];
+  
+  // Use SSH telemetry for Mac Mini if available, otherwise fallback to 0s
+  const macTelemetry = macMiniTelemetry.success ? macMiniTelemetry : { cpu: 0, memory: 0, storage: 0 };
 
   const models = [
     ...schedulerModels.map((m: any) => ({
@@ -89,9 +94,9 @@ app.get("/api/dashboard", async (_req, res) => {
         role: "Controller Node / Agent Host",
         status: ollamaMac.ok ? "healthy" : "warning",
         uptime: "live",
-        cpu: 0,
-        memory: 0,
-        storage: 0,
+        cpu: macTelemetry.cpu,
+        memory: macTelemetry.memory,
+        storage: macTelemetry.storage,
         network: { rx: 0, tx: 0 },
       },
       {
