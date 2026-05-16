@@ -1,4 +1,4 @@
-﻿import type { DashboardData } from '../types/dashboard';
+import type { DashboardData } from '../types/dashboard';
 
 export const mockDashboardData: DashboardData = {
   overallStatus: 'warning',
@@ -19,9 +19,9 @@ export const mockDashboardData: DashboardData = {
     { id: 'camera-relay', name: 'Camera Relay', description: 'Dog/apartment camera relay and motion tagging.', status: 'warning', host: 'Raspberry Pi 4B', category: 'media', runtimeType: 'docker compose', endpoint: 'rtsp://rpi4b.local:8554/live', uptime: '11d 09h', latencyMs: 133, lastHeartbeat: '39s ago', lastFailure: '2026-05-11 08:40 UTC · stream reconnect', tags: ['media'] }
   ],
   incidents: [
-    { id: 'inc-1', message: 'InkyPi heartbeat stale for 17m', status: 'critical', time: '1 min ago', source: 'ndj-inky' },
-    { id: 'inc-2', message: 'GB10 scheduler queue depth > 3', status: 'warning', time: '4 min ago', source: 'ollama-gb10' },
-    { id: 'inc-3', message: 'Camera relay packet loss detected', status: 'warning', time: '12 min ago', source: 'camera-relay' }
+    { id: 'inc-1', message: 'InkyPi heartbeat stale for 17m', status: 'critical', time: '1 min ago', source: 'ndj-inky', acknowledged: false },
+    { id: 'inc-2', message: 'GB10 scheduler queue depth > 3', status: 'warning', time: '4 min ago', source: 'ollama-gb10', acknowledged: false },
+    { id: 'inc-3', message: 'Camera relay packet loss detected', status: 'warning', time: '12 min ago', source: 'camera-relay', acknowledged: false }
   ],
   jobs: [
     { id: 'mealops-sync', name: 'Weekly meal planning sync', domain: 'MealOps', status: 'healthy', schedule: '0 7 * * 0', lastRun: '2026-05-10 07:00', nextRun: '2026-05-17 07:00', duration: '41s', targetHost: 'Raspberry Pi 5 · 16GB RAM', lastResult: '7 meals generated', successRate: '98%', missedRunWarning: 'none' },
@@ -48,5 +48,3 @@ export const mockDashboardData: DashboardData = {
   ],
   updatedAt: new Date().toISOString()
 };
-
-

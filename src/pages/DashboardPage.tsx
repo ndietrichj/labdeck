@@ -1,5 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
-
+import { useEffect, useMemo, useState } from 'react';
 
 const displayNodeName = (name?: string) => {
   const map: Record<string, string> = {
@@ -21,7 +20,6 @@ const displayNodeRole = (role?: string) => {
   return map[role ?? ""] ?? role ?? "";
 };
 
-
 import { StatusBadge } from '../components/StatusBadge';
 import { useDashboardData } from '../hooks/useDashboardData';
 import type { Job, Service, ServiceCategory } from '../types/dashboard';
@@ -40,6 +38,12 @@ export function DashboardPage() {
   const [serviceSearch, setServiceSearch] = useState('');
   const [providerId, setProviderId] = useState('sched');
   const [model, setModel] = useState('');
+  const [acknowledgedIncidentIds, setAcknowledgedIncidentIds] = useState<string[]>([]);
+
+  const acknowledgeIncident = (id: string) => {
+    setAcknowledgedIncidentIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+  };
+
   const modelsForProvider = data?.models.filter((m) => m.providerId === providerId) ?? [];
   useEffect(() => { if (!modelsForProvider.find((m) => m.id === model)) setModel(modelsForProvider[0]?.id ?? ''); }, [model, modelsForProvider]);
   const provider = data?.aiProviders.find((p) => p.id === providerId) ?? data?.aiProviders[0];
@@ -55,13 +59,5 @@ export function DashboardPage() {
 {activePage === 'AI' && <section className="ai-layout"><article className="hud-panel chat-workspace"><div className="filters"><select value={providerId} onChange={(e) => setProviderId(e.target.value)}>{data.aiProviders.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select><select value={model} onChange={(e) => setModel(e.target.value)}>{modelsForProvider.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></div><div className="chat-panel"><AgentConsole backendUrl={runtimeConfig.backendBaseUrl} providerId={providerId} model={model} /></div></article><article className="hud-panel"><h4>Telemetry</h4><p className="muted">Latency: {telemetry?.latencyMs}ms</p><p className="muted">Tokens/sec: {telemetry?.tokensPerSec}</p><p className="muted">Memory pressure: {telemetry?.memoryPressure}</p><p className="muted">Scheduler contention: {telemetry?.schedulerContention}</p><p className="muted">Queue depth: {telemetry?.queueDepth}</p><p className="muted">Provider health: {telemetry?.providerHealth}</p><p className="muted">Model residency: {telemetry?.modelResidency}</p></article></section>}
 {activePage === 'Automation' && <section className="hud-panel"><div className="automation-grid">{Object.entries(groupedJobs).map(([domain, jobs]) => <div key={domain} className="domain-group"><h4>{domain}</h4>{jobs.map((job) => <button key={job.id} className="service-row" onClick={() => setSelectedJob(job)}><strong>{job.name}</strong><StatusBadge status={job.status} /><span>{job.schedule}</span><span>{job.nextRun}</span><span>{job.lastRun}</span><span>{job.duration}</span><span>{job.lastResult}</span><span>{job.successRate}</span><span>{job.missedRunWarning}</span><span>{job.targetHost}</span></button>)}</div>)}</div>{selectedJob && <aside className="detail-panel"><h4>{selectedJob.name}</h4><p className="muted">Recent runs: [placeholder list]</p><p className="muted">Log tail: [placeholder tail -50]</p><p className="muted">Last failure/outage: [placeholder]</p><p className="muted">Notes/Owner: [placeholder]</p><div className="pill-row"><button>Run Now</button><button>Pause</button><button>Logs</button><button>History</button></div></aside>}</section>}
 {activePage === 'Config' && <section className="hud-panel compact"><p>Runtime mode: {runtimeConfig.mode}</p><p>Backend URL: {runtimeConfig.backendBaseUrl}</p><p>Refresh interval: {runtimeConfig.refreshIntervalMs}ms</p><p>Endpoint registry: {Object.entries(runtimeConfig.providers).map(([k, v]) => `${k}: ${v}`).join(' · ')}</p><p>Node registry: {runtimeConfig.nodeRegistry.map((n) => `${n.hostname}(${n.ip})`).join(', ')}</p><p className="muted">Live = backend reachable. Mock = fallback data. Stale = endpoint lagging telemetry window.</p></section>}
-</main><aside className="hud-rail hud-panel"><h3>Incident Feed</h3>{data.incidents.map((incident) => <article key={incident.id} className={`incident-item ${incident.status}`}><div className="incident-head"><StatusBadge status={incident.status} /><span>{incident.time}</span></div><p>{incident.message}</p></article>)}</aside></div>;
+</main><aside className="hud-rail hud-panel"><h3>Incident Feed</h3>{data.incidents.map((incident) => <article key={incident.id} className={`incident-item ${acknowledgedIncidentIds.includes(incident.id) ? 'acknowledged' : ''}`}><div className="incident-head"><StatusBadge status={incident.status} /><span>{incident.time}</span><button className="acknowledge-btn" onClick={() => acknowledgeIncident(incident.id)}>✓</button></div><p>{incident.message}</p></article>)}</aside></div>;
 }
-
-
-
-
-
-
-
-

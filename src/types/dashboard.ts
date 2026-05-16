@@ -69,6 +69,7 @@ export interface Incident {
   status: Status;
   time: string;
   source?: string;
+  acknowledged?: boolean;
 }
 
 export interface Job {
