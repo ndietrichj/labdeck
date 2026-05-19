@@ -1,14 +1,15 @@
-﻿import { copyFileSync, mkdirSync, existsSync } from "node:fs";
-import { dirname } from "node:path";
+import fs from "node:fs";
+import path from "node:path";
 
-const source = "src-tauri/binaries/labdeck-backend-x86_64-pc-windows-msvc.exe";
-const target = "src-tauri/target/release/labdeck-backend.exe";
+const src = "src-tauri/binaries/labdeck-backend-x86_64-pc-windows-msvc.exe";
 
-if (!existsSync(source)) {
-  throw new Error(`Missing backend sidecar source: ${source}`);
+const targets = [
+  "src-tauri/target/debug/labdeck-backend.exe",
+  "src-tauri/target/release/labdeck-backend.exe",
+];
+
+for (const target of targets) {
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.copyFileSync(src, target);
+  console.log(`Copied backend sidecar: ${src} -> ${target}`);
 }
-
-mkdirSync(dirname(target), { recursive: true });
-copyFileSync(source, target);
-
-console.log(`Copied backend sidecar: ${source} -> ${target}`);

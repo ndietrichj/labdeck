@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { StatusBadge } from '../components/StatusBadge';
 import { useDashboardData } from '../hooks/useDashboardData';
+import { runtimeConfig } from '../lib/api';
 import '../styles/dashboard.css';
 
 const navItems = ['HUD', 'Services', 'AI', 'Automation', 'Config'] as const;
@@ -9,7 +10,7 @@ type Page = (typeof navItems)[number];
 type HomelabStatus = any;
 
 export function DashboardPage() {
-  const { data, meta, loading, refresh, runtimeConfig } = useDashboardData();
+  const { data, meta, loading, refresh } = useDashboardData();
   const [activePage, setActivePage] = useState<Page>('HUD');
   const [homelab, setHomelab] = useState<HomelabStatus | null>(null);
 
@@ -242,7 +243,7 @@ export function DashboardPage() {
           feedItems.map((item: any, index: number) => (
             <article key={`${item.message}-${index}`} className="incident-item">
               <div className="incident-head">
-                <StatusBadge status={(item.severity ?? item.status ?? 'warning').toLowerCase()} />
+                <StatusBadge status={String(item.severity ?? item.status ?? 'warning').toLowerCase()} />
                 <span>{item.area ?? item.source ?? 'System'}</span>
               </div>
               <p>{item.message}</p>
@@ -253,3 +254,6 @@ export function DashboardPage() {
     </div>
   );
 }
+
+
+

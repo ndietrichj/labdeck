@@ -7,6 +7,22 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![check_updates])
         .setup(|app| {
+            #[cfg(debug_assertions)]
+            {
+                use std::process::Command;
+
+                let exe = std::env::current_dir()
+                    .unwrap()
+                    .join("binaries")
+                    .join("labdeck-backend-x86_64-pc-windows-msvc.exe");
+
+                Command::new(exe)
+                    .env("LABDECK_PORT", "8790")
+                    .env("HOMELAB_STATUS_URL", "http://10.0.0.220:8787/public-status.json")
+                    .spawn()
+                    .expect("failed to launch dev backend");
+            }
+
             #[cfg(not(debug_assertions))]
             {
                 use tauri_plugin_shell::ShellExt;
@@ -15,6 +31,8 @@ fn main() {
                     .shell()
                     .sidecar("labdeck-backend")
                     .expect("failed to create backend sidecar")
+                    .env("LABDECK_PORT", "8790")
+                    .env("HOMELAB_STATUS_URL", "http://10.0.0.220:8787/public-status.json")
                     .spawn()
                     .expect("failed to launch backend");
             }
