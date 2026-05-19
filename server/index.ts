@@ -18,6 +18,9 @@ const env = {
   prometheus: process.env.PROMETHEUS_URL ?? "http://10.0.0.139:9090",
   pihole: process.env.PIHOLE_URL ?? "http://10.0.0.104/admin/api.php",
   inkypi: process.env.INKYPI_HOST ?? "10.0.0.175",
+  homelabStatusUrl:
+    process.env.HOMELAB_STATUS_URL ??
+    "http://10.0.0.220:8787/public-status.json",
 };
 
 async function getJson(url: string, timeoutMs = 2500) {
@@ -46,16 +49,43 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
+app.get("/api/homelab/status", async (_req, res) => {
+  try {
+    const upstream = await axios.get(env.homelabStatusUrl, {
+      timeout: 5000,
+    });
+
+    return res.json({
+      ok: true,
+      source: "homelab-control",
+      url: env.homelabStatusUrl,
+      generatedAt: upstream.data?.generated_at ?? null,
+      data: upstream.data,
+    });
+  } catch (error: any) {
+    return res.status(502).json({
+      ok: false,
+      source: "homelab-control",
+      url: env.homelabStatusUrl,
+      error:
+        error?.response?.data?.error ??
+        error?.message ??
+        "failed to fetch homelab status",
+    });
+  }
+});
+
 app.get("/api/dashboard", async (_req, res) => {
   const localTelemetry = await getLocalHostTelemetry();
-  const [ollamaMac, ollamaGb10, scheduler, llamaCpp, prometheus, macMiniTelemetry] = await Promise.all([
-    getJson(`${env.ollamaMac}/api/tags`),
-    getJson(`${env.ollamaGb10}/api/tags`),
-    getJson(`${env.scheduler}/v1/models`),
-    getJson(`${env.llamaCpp}/health`),
-    getJson(`${env.prometheus}/api/v1/query?query=up`),
-    getMacMiniRemoteTelemetry(),
-  ]);
+  const [ollamaMac, ollamaGb10, scheduler, llamaCpp, prometheus, macMiniTelemetry] =
+    await Promise.all([
+      getJson(`${env.ollamaMac}/api/tags`),
+      getJson(`${env.ollamaGb10}/api/tags`),
+      getJson(`${env.scheduler}/v1/models`),
+      getJson(`${env.llamaCpp}/health`),
+      getJson(`${env.prometheus}/api/v1/query?query=up`),
+      getMacMiniRemoteTelemetry(),
+    ]);
 
   const failedEndpoints = [
     !ollamaMac.ok && "ollama-mac",
@@ -68,9 +98,10 @@ app.get("/api/dashboard", async (_req, res) => {
   const macModels = ollamaMac.ok ? ollamaMac.data.models ?? [] : [];
   const gb10Models = ollamaGb10.ok ? ollamaGb10.data.models ?? [] : [];
   const schedulerModels = scheduler.ok ? scheduler.data.data ?? [] : [];
-  
-  // Use SSH telemetry for Mac Mini if available, otherwise fallback to 0s
-  const macTelemetry = macMiniTelemetry.success ? macMiniTelemetry : { cpu: 0, memory: 0, storage: 0 };
+
+  const macTelemetry = macMiniTelemetry.success
+    ? macMiniTelemetry
+    : { cpu: 0, memory: 0, storage: 0 };
 
   const models = [
     ...schedulerModels.map((m: any) => ({
@@ -285,7 +316,12 @@ app.get("/api/dashboard", async (_req, res) => {
     models: models.length
       ? models
       : [
-          { id: "no-live-models", providerId: "sched", name: "No live models detected", contextWindow: "n/a" },
+          {
+            id: "no-live-models",
+            providerId: "sched",
+            name: "No live models detected",
+            contextWindow: "n/a",
+          },
         ],
 
     ai: {
@@ -355,7 +391,6 @@ app.get("/api/dashboard", async (_req, res) => {
   res.json(data);
 });
 
-
 app.post("/api/chat", async (req, res) => {
   const { providerId, model, prompt, messages } = req.body ?? {};
 
@@ -365,43 +400,54 @@ app.post("/api/chat", async (req, res) => {
 
   try {
     if (providerId === "sched") {
-      const upstream = await axios.post(`${env.scheduler}/v1/chat/completions`, {
-        model,
-        messages: Array.isArray(messages) ? messages : [{ role: "user", content: prompt }],
-        stream: false
-      }, { timeout: 120000 });
+      const upstream = await axios.post(
+        `${env.scheduler}/v1/chat/completions`,
+        {
+          model,
+          messages: Array.isArray(messages)
+            ? messages
+            : [{ role: "user", content: prompt }],
+          stream: false,
+        },
+        { timeout: 120000 }
+      );
 
       return res.json({
         providerId,
         model,
-        response: upstream.data?.choices?.[0]?.message?.content ?? JSON.stringify(upstream.data)
+        response:
+          upstream.data?.choices?.[0]?.message?.content ??
+          JSON.stringify(upstream.data),
       });
     }
 
     const baseUrl = providerId === "ollama-mac" ? env.ollamaMac : env.ollamaGb10;
 
-    const upstream = await axios.post(`${baseUrl}/api/generate`, {
-      model,
-      prompt,
-      stream: false
-    }, { timeout: 120000 });
+    const upstream = await axios.post(
+      `${baseUrl}/api/generate`,
+      {
+        model,
+        prompt,
+        stream: false,
+      },
+      { timeout: 120000 }
+    );
 
     return res.json({
       providerId,
       model,
-      response: upstream.data?.response ?? JSON.stringify(upstream.data)
+      response: upstream.data?.response ?? JSON.stringify(upstream.data),
     });
   } catch (error: any) {
     return res.status(502).json({
-      error: error?.response?.data?.error ?? error?.message ?? "model request failed"
+      error:
+        error?.response?.data?.error ??
+        error?.message ??
+        "model request failed",
     });
   }
 });
+
 app.listen(port, "0.0.0.0", () => {
   console.log(`LabDeck telemetry bridge listening on http://localhost:${port}/api`);
 });
-
-
-
-
-
